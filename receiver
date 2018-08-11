@@ -1,0 +1,32 @@
+#!/usr/bin/python3
+import errno
+import functools
+import socket
+from tornado import iostream, ioloop, tcpserver, gen
+from database.request import Request
+
+
+class TCPServer(tcpserver.TCPServer):
+
+    @gen.coroutine
+    def handle_stream(self, stream, address):
+        data = yield stream.read_until_close()
+        print(data)
+        print()
+
+
+def get_args():
+
+    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+    
+    parser = ArgumentParser(description="TCP Listen Server", formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--port", type=int, default=8080, help="Listen port")
+    return parser.parse_args()
+
+
+if  __name__=='__main__':
+
+    args = get_args()
+    server = TCPServer()
+    server.listen(args.port)
+    ioloop.IOLoop.instance().start()

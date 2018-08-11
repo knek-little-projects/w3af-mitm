@@ -1,0 +1,42 @@
+#!/usr/bin/python3
+import errno
+import functools
+import socket
+from tornado import iostream, ioloop, tcpserver, gen
+from database.request import Request
+
+
+class TCPServer(tcpserver.TCPServer):
+
+    def add_remote(self, ip, port):
+        self._remote = ip, port
+
+    @gen.coroutine
+    def handle_stream(self, stream, address):
+        data = yield stream.read_until_close()
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect(self._remote)
+                s.send(data)
+        except:
+            pass
+
+
+def get_args():
+
+    from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+
+    parser = ArgumentParser(description="TCP Transmitter", formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--from-port", type=int, default=8080, help="Listen port")
+    parser.add_argument("--to-port", type=int, default=8080, help="Send to remote port")
+    parser.add_argument("--to-ip", type=str, default="123.123.123.123", help="Send to remote IP")
+    return parser.parse_args()
+
+
+if  __name__=='__main__':
+
+    args = get_args()
+    server = TCPServer()
+    server.listen(args.from_port)
+    server.add_remote(args.to_ip, args.to_port)
+    ioloop.IOLoop.instance().start()
